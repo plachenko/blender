@@ -37,6 +37,7 @@ static bNodeSocketTemplate geo_node_point_instance_in[] = {
      0.0f,
      PROP_NONE,
      SOCK_HIDE_LABEL},
+    {SOCK_GEOMETRY, N_("Instance Geometry")},
     {SOCK_INT, N_("Seed"), 0, 0, 0, 0, -10000, 10000},
     {-1, ""},
 };
@@ -69,7 +70,8 @@ static void geo_node_point_instance_update(bNodeTree *UNUSED(tree), bNode *node)
 {
   bNodeSocket *object_socket = (bNodeSocket *)BLI_findlink(&node->inputs, 1);
   bNodeSocket *collection_socket = object_socket->next;
-  bNodeSocket *seed_socket = collection_socket->next;
+  bNodeSocket *instance_geometry_socket = collection_socket->next;
+  bNodeSocket *seed_socket = instance_geometry_socket->next;
 
   NodeGeometryPointInstance *node_storage = (NodeGeometryPointInstance *)node->storage;
   GeometryNodePointInstanceType type = (GeometryNodePointInstanceType)node_storage->instance_type;
@@ -78,6 +80,8 @@ static void geo_node_point_instance_update(bNodeTree *UNUSED(tree), bNode *node)
 
   nodeSetSocketAvailability(object_socket, type == GEO_NODE_POINT_INSTANCE_TYPE_OBJECT);
   nodeSetSocketAvailability(collection_socket, type == GEO_NODE_POINT_INSTANCE_TYPE_COLLECTION);
+  nodeSetSocketAvailability(instance_geometry_socket,
+                            type == GEO_NODE_POINT_INSTANCE_TYPE_GEOMETRY);
   nodeSetSocketAvailability(
       seed_socket, type == GEO_NODE_POINT_INSTANCE_TYPE_COLLECTION && !use_whole_collection);
 }
@@ -127,6 +131,12 @@ static Vector<InstanceReference> get_instance_references__collection(GeoNodeExec
   return references;
 }
 
+static Vector<InstanceReference> get_instance_references__geometry(GeoNodeExecParams &params)
+{
+  GeometrySet geometry_set = params.extract_input<GeometrySet>("Instance Geometry");
+  return {std::move(geometry_set)};
+}
+
 static Vector<InstanceReference> get_instance_references(GeoNodeExecParams &params)
 {
   const bNode &node = params.node();
@@ -140,6 +150,9 @@ static Vector<InstanceReference> get_instance_references(GeoNodeExecParams &para
     }
     case GEO_NODE_POINT_INSTANCE_TYPE_COLLECTION: {
       return get_instance_references__collection(params);
+    }
+    case GEO_NODE_POINT_INSTANCE_TYPE_GEOMETRY: {
+      return get_instance_references__geometry(params);
     }
   }
   return {};

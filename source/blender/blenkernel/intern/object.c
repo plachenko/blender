@@ -1974,8 +1974,7 @@ int BKE_object_visibility(const Object *ob, const int dag_eval_mode)
     visibility |= OB_VISIBLE_INSTANCES;
   }
 
-  if (ob->runtime.geometry_set_eval != NULL &&
-      BKE_geometry_set_has_instances(ob->runtime.geometry_set_eval)) {
+  if (BKE_object_has_geometry_set_instances(ob)) {
     visibility |= OB_VISIBLE_INSTANCES;
   }
 
